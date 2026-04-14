@@ -124,22 +124,22 @@ export async function processOrder(initialOrder: Order): Promise<Order> {
         log.info('Payment reversed', { order_id: workflow.order.order_id });
       } catch (error) {
         if (error instanceof ActivityFailure && error.name === 'PaymentNotReversableError') {
+          log.error('Payment not reversable', { error });
           workflow.order.payment_error = 'Payment not reversable';
           sendToOrderCorrectionApi(workflow.order);
-          log.error('Payment not reversable', { error });
-          throw new Error('Payment not reversable');
+        } else {
+          log.error('Error reversing payment', { error });
+          workflow.order.payment_error = 'Error reversing payment';
+          sendToOrderCorrectionApi(workflow.order);
+          throw new ApplicationFailure('Fulfillment completed timeout');
         }
-        log.error('Error reversing payment', { error });
-        throw error;
       }
-
-      workflow.order.fulfillment_error = 'Fulfillment completed timeout';
-      throw new Error('Fulfillment completed timeout');
     }
   } catch (error) {
     log.error('Error sending order to fulfillment', { error });
     workflow.order.fulfillment_error = 'Failed to send order to fulfillment';
-    throw new Error('Failed to send order to fulfillment');
+    sendToOrderCorrectionApi(workflow.order);
+    throw new ApplicationFailure('Failed to send order to fulfillment');
   }
   return workflow.order;
 }

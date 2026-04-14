@@ -1,1 +1,1 @@
-export const TASK_QUEUE_NAME = 'your-task-queue-name';
+export const TASK_QUEUE_NAME = 'oms-queue';
